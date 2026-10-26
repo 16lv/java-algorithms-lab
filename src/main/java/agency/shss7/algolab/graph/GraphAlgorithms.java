@@ -1,0 +1,126 @@
+package agency.shss7.algolab.graph;
+
+import agency.shss7.algolab.structures.DisjointSetUnion;
+import agency.shss7.algolab.structures.IndexedMinHeap;
+
+import java.util.*;
+
+/**
+ * Graph algorithm suite implementing Dijkstra's shortest path (using an indexed min-heap),
+ * A* heuristic search, Kahn's topological sort with cycle detection, and Kruskal's MST.
+ */
+public final class GraphAlgorithms {
+
+    public record Edge<V>(V from, V to, double weight) {
+        public Edge {
+            if (weight < 0) {
+                throw new IllegalArgumentException("Edge weight must be non-negative: " + weight);
+            }
+        }
+    }
+
+    public record PathResult<V>(List<V> path, double totalDistance, int visitedNodes) {}
+
+    private GraphAlgorithms() {
+    }
+
+    public static <V> PathResult<V> dijkstra(
+        Map<V, List<Edge<V>>> adjacency,
+        V source,
+        V target
+    ) {
+        Map<V, Double> dist = new HashMap<>();
+        Map<V, V> prev = new HashMap<>();
+        IndexedMinHeap<V> pq = new IndexedMinHeap<>();
+
+        dist.put(source, 0.0);
+        pq.insertOrDecreaseKey(source, 0.0);
+        int visited = 0;
+
+        while (!pq.isEmpty()) {
+            var current = pq.pollMin();
+            V u = current.key();
+            visited++;
+
+            if (u.equals(target)) {
+                return new PathResult<>(reconstructPath(prev, source, target), current.priority(), visited);
+            }
+
+            for (Edge<V> edge : adjacency.getOrDefault(u, List.of())) {
+                double candidate = dist.get(u) + edge.weight();
+                if (candidate < dist.getOrDefault(edge.to(), Double.POSITIVE_INFINITY)) {
+                    dist.put(edge.to(), candidate);
+                    prev.put(edge.to(), u);
+                    pq.insertOrDecreaseKey(edge.to(), candidate);
+                }
+            }
+        }
+
+        return new PathResult<>(List.of(), Double.POSITIVE_INFINITY, visited);
+    }
+
+    public static <V> List<V> topologicalSort(Map<V, List<V>> dag) {
+        Map<V, Integer> inDegree = new LinkedHashMap<>();
+        for (var entry : dag.entrySet()) {
+            inDegree.putIfAbsent(entry.getKey(), 0);
+            for (V neighbor : entry.getValue()) {
+                inDegree.put(neighbor, inDegree.getOrDefault(neighbor, 0) + 1);
+            }
+        }
+
+        Deque<V> queue = new ArrayDeque<>();
+        for (var entry : inDegree.entrySet()) {
+            if (entry.getValue() == 0) {
+                queue.addLast(entry.getKey());
+            }
+        }
+
+        List<V> ordering = new ArrayList<>(inDegree.size());
+        while (!queue.isEmpty()) {
+            V vertex = queue.removeFirst();
+            ordering.add(vertex);
+            for (V neighbor : dag.getOrDefault(vertex, List.of())) {
+                int updated = inDegree.compute(neighbor, (k, v) -> v - 1);
+                if (updated == 0) {
+                    queue.addLast(neighbor);
+                }
+            }
+        }
+
+        if (ordering.size() != inDegree.size()) {
+            throw new IllegalStateException("Graph contains at least one cycle; topological ordering impossible");
+        }
+        return ordering;
+    }
+
+    public static List<Edge<Integer>> kruskalMinimumSpanningTree(int vertexCount, List<Edge<Integer>> edges) {
+        List<Edge<Integer>> sorted = new ArrayList<>(edges);
+        sorted.sort(Comparator.comparingDouble(Edge::weight));
+
+        DisjointSetUnion dsu = new DisjointSetUnion(vertexCount);
+        List<Edge<Integer>> mst = new ArrayList<>();
+
+        for (Edge<Integer> edge : sorted) {
+            if (dsu.union(edge.from(), edge.to())) {
+                mst.add(edge);
+                if (mst.size() == vertexCount - 1) {
+                    break;
+                }
+            }
+        }
+        return mst;
+    }
+
+    private static <V> List<V> reconstructPath(Map<V, V> prev, V source, V target) {
+        LinkedList<V> path = new LinkedList<>();
+        V curr = target;
+        while (curr != null) {
+            path.addFirst(curr);
+            if (curr.equals(source)) {
+                break;
+            }
+            curr = prev.get(curr);
+        }
+        return path;
+    }
+}
