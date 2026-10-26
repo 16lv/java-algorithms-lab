@@ -1,8 +1,11 @@
 package agency.shss7.algolab.sorting;
 
 /**
- * Sorting and order-statistic algorithms: Bottom-Up MergeSort, Dual-Pivot QuickSort,
- * and Hoare QuickSelect for O(N) expected k-th smallest element selection.
+ * Sorting, binary searching, and order-statistic algorithms:
+ * - Bottom-Up Iterative MergeSort O(N log N)
+ * - In-place QuickSort O(N log N) average
+ * - Binary Search (exact lookup and lowerBound first-index lookup) O(log N)
+ * - Hoare QuickSelect for O(N) expected k-th smallest element selection
  */
 public final class SortingAndSelection {
 
@@ -22,6 +25,67 @@ public final class SortingAndSelection {
                 merge(array, aux, lo, mid, hi);
             }
         }
+    }
+
+    public static void quickSort(int[] array) {
+        if (array == null || array.length <= 1) {
+            return;
+        }
+        quickSortRange(array, 0, array.length - 1);
+    }
+
+    private static void quickSortRange(int[] a, int lo, int hi) {
+        if (lo >= hi) {
+            return;
+        }
+        int pivotIdx = partition(a, lo, hi);
+        quickSortRange(a, lo, pivotIdx - 1);
+        quickSortRange(a, pivotIdx + 1, hi);
+    }
+
+    /**
+     * Standard binary search on a sorted array in O(log N) time.
+     * Returns index of target, or -1 if absent.
+     */
+    public static int binarySearch(int[] sorted, int target) {
+        if (sorted == null) {
+            throw new IllegalArgumentException("Input array must not be null");
+        }
+        int lo = 0;
+        int hi = sorted.length - 1;
+        while (lo <= hi) {
+            int mid = lo + ((hi - lo) >>> 1);
+            int val = sorted[mid];
+            if (val == target) {
+                return mid;
+            } else if (val < target) {
+                lo = mid + 1;
+            } else {
+                hi = mid - 1;
+            }
+        }
+        return -1;
+    }
+
+    /**
+     * Returns the first index i in a sorted array such that sorted[i] >= target,
+     * or sorted.length if all elements are smaller than target.
+     */
+    public static int lowerBound(int[] sorted, int target) {
+        if (sorted == null) {
+            throw new IllegalArgumentException("Input array must not be null");
+        }
+        int lo = 0;
+        int hi = sorted.length;
+        while (lo < hi) {
+            int mid = lo + ((hi - lo) >>> 1);
+            if (sorted[mid] < target) {
+                lo = mid + 1;
+            } else {
+                hi = mid;
+            }
+        }
+        return lo;
     }
 
     public static int quickSelect(int[] array, int k) {

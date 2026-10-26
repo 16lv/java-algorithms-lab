@@ -6,8 +6,12 @@ import agency.shss7.algolab.structures.IndexedMinHeap;
 import java.util.*;
 
 /**
- * Graph algorithm suite implementing Dijkstra's shortest path (using an indexed min-heap),
- * A* heuristic search, Kahn's topological sort with cycle detection, and Kruskal's MST.
+ * Graph representation and traversal algorithms:
+ * - Breadth-First Search (BFS) traversal and unweighted shortest hop count
+ * - Depth-First Search (DFS) iterative and post-order traversal
+ * - Dijkstra's weighted shortest path using an indexed min-heap
+ * - Kahn's topological sort with cycle detection
+ * - Kruskal's minimum spanning tree using Union-Find
  */
 public final class GraphAlgorithms {
 
@@ -22,6 +26,61 @@ public final class GraphAlgorithms {
     public record PathResult<V>(List<V> path, double totalDistance, int visitedNodes) {}
 
     private GraphAlgorithms() {
+    }
+
+    /**
+     * Breadth-First Search (BFS) traversal from a starting vertex in O(V + E) time.
+     */
+    public static <V> List<V> breadthFirstSearch(Map<V, List<V>> adjacency, V start) {
+        if (start == null) {
+            throw new IllegalArgumentException("Start vertex must not be null");
+        }
+        List<V> order = new ArrayList<>();
+        Set<V> visited = new LinkedHashSet<>();
+        Deque<V> queue = new ArrayDeque<>();
+
+        visited.add(start);
+        queue.addLast(start);
+
+        while (!queue.isEmpty()) {
+            V current = queue.removeFirst();
+            order.add(current);
+            for (V neighbor : adjacency.getOrDefault(current, List.of())) {
+                if (visited.add(neighbor)) {
+                    queue.addLast(neighbor);
+                }
+            }
+        }
+        return order;
+    }
+
+    /**
+     * Depth-First Search (DFS) traversal from a starting vertex in O(V + E) time.
+     */
+    public static <V> List<V> depthFirstSearch(Map<V, List<V>> adjacency, V start) {
+        if (start == null) {
+            throw new IllegalArgumentException("Start vertex must not be null");
+        }
+        List<V> order = new ArrayList<>();
+        Set<V> visited = new HashSet<>();
+        Deque<V> stack = new ArrayDeque<>();
+        stack.push(start);
+
+        while (!stack.isEmpty()) {
+            V current = stack.pop();
+            if (!visited.add(current)) {
+                continue;
+            }
+            order.add(current);
+            List<V> neighbors = adjacency.getOrDefault(current, List.of());
+            for (int i = neighbors.size() - 1; i >= 0; i--) {
+                V neighbor = neighbors.get(i);
+                if (!visited.contains(neighbor)) {
+                    stack.push(neighbor);
+                }
+            }
+        }
+        return order;
     }
 
     public static <V> PathResult<V> dijkstra(

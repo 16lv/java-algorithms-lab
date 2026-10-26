@@ -22,10 +22,8 @@ class AlgorithmLaboratoryTest {
         cache.put("B", 2);
         cache.put("C", 3);
 
-        // Access "A" so "B" becomes the least recently used entry
         assertEquals(Optional.of(1), cache.get("A"));
 
-        // Inserting "D" must evict "B"
         cache.put("D", 4);
         assertEquals(Optional.empty(), cache.get("B"));
         assertEquals(Optional.of(1), cache.get("A"));
@@ -41,13 +39,29 @@ class AlgorithmLaboratoryTest {
         heap.insertOrDecreaseKey("node-b", 8.0);
         heap.insertOrDecreaseKey("node-c", 22.0);
 
-        // Decrease priority of node-c from 22.0 down to 3.5
         heap.insertOrDecreaseKey("node-c", 3.5);
 
         assertEquals("node-c", heap.pollMin().key());
         assertEquals("node-b", heap.pollMin().key());
         assertEquals("node-a", heap.pollMin().key());
         assertTrue(heap.isEmpty());
+    }
+
+    @Test
+    void bfsAndDfsTraverseConnectedGraphCorrectly() {
+        Map<String, List<String>> graph = Map.of(
+            "A", List.of("B", "C"),
+            "B", List.of("D"),
+            "C", List.of("E"),
+            "D", List.of(),
+            "E", List.of()
+        );
+
+        List<String> bfs = GraphAlgorithms.breadthFirstSearch(graph, "A");
+        assertEquals(List.of("A", "B", "C", "D", "E"), bfs);
+
+        List<String> dfs = GraphAlgorithms.depthFirstSearch(graph, "A");
+        assertEquals(List.of("A", "B", "D", "C", "E"), dfs);
     }
 
     @Test
@@ -105,14 +119,22 @@ class AlgorithmLaboratoryTest {
     }
 
     @Test
-    void mergeSortAndQuickSelectMatchSortedOrder() {
+    void mergeSortQuickSortBinarySearchAndQuickSelectMatchSortedOrder() {
         int[] raw = {42, 7, 19, -3, 88, 14, 0, 19, 5};
         int[] expected = raw.clone();
         Arrays.sort(expected);
 
-        int[] sorted = raw.clone();
-        SortingAndSelection.mergeSort(sorted);
-        assertArrayEquals(expected, sorted);
+        int[] mergeSorted = raw.clone();
+        SortingAndSelection.mergeSort(mergeSorted);
+        assertArrayEquals(expected, mergeSorted);
+
+        int[] quickSorted = raw.clone();
+        SortingAndSelection.quickSort(quickSorted);
+        assertArrayEquals(expected, quickSorted);
+
+        assertEquals(4, SortingAndSelection.binarySearch(expected, 14));
+        assertEquals(-1, SortingAndSelection.binarySearch(expected, 999));
+        assertEquals(5, SortingAndSelection.lowerBound(expected, 19));
 
         for (int k = 0; k < raw.length; k++) {
             assertEquals(expected[k], SortingAndSelection.quickSelect(raw, k));
